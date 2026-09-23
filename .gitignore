@@ -1,0 +1,39 @@
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_deps
+/.cmake/
+build/
+
+# Editors / tooling
+/.vscode/
+/.idea/
+.cache
+.ccls-cache
+/.pre-commit-config.yaml
+/.worktree/
+**/.#*.*
+**/#*.*#
+
+# macOS
+.DS_Store
+
+# Xcode (cmake -G Xcode)
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+
+# Build artifacts
+*.openapi-generator-ignore*.a
+*.dylib
+*.dSYM/
+*.tar.gz
