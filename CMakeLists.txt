@@ -14,6 +14,8 @@ if(NOT APPLE)
     message(FATAL_ERROR "Hyprquartz only builds on macOS")
 endif()
 
+add_subdirectory(subprojects/hyprutils)
+
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -35,3 +37,6 @@ add_compile_options(
         -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=)
 
 add_executable(hyprquartz src/main.cpp)
+
+target_include_directories(hyprquartz PRIVATE ${CMAKE_SOURCE_DIR}/compat)
+target_link_libraries(hyprquartz PRIVATE hyprutils)
