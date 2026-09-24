@@ -58,6 +58,8 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 ## Known macOS limitations
 - FileDescriptor.cpp isClosed() on a named FIFO: XNU only exposes "all writers have gone" through select() while the buffer is empty and before the first EOF read (implemented). Linux's POLLHUP in the other cases cannot be reproduced on macOS. Measured with probes/poll/poll_probe.cpp: Q5, a writer wrote then left with data unread (Linux closed=true readable=true; macOS closed=false readable=true); Q6, EOF already read once (Linux closed=true readable=false; macOS closed=false readable=false). Evidence: XNU fifo_vnops.c fifo_close_internal / fifo_read, vfs_vnops.c filt_vnode_common. Re-check with probes/poll/poll_probe.cpp.
 
+- Named FIFO write end after the last reader closed (Q9): XNU exposes no state for it. Measured with probes/poll/poll_probe.cpp: kqueue write filter fires with data=8192 and no EV_EOF, read filter none, select(W)=1, poll() POLLOUT only. Linux reports POLLERR: FileDescriptor::isClosed() is true there, and the event loop reports ERR (R) / W|ERR (W, RW). On macOS isClosed() is false and the event loop reports W without ERR. An anonymous pipe's write end (P3) is not affected (EV_EOF/POLLHUP present, results match Linux). A write to the FIFO still fails (EPIPE, UNVERIFIED, not measured). Re-check with probes/poll/poll_probe.cpp.
+
 - File-name case (general, all file lookups): macOS volumes are usually case-insensitive (APFS; measured with pathconf(_PC_CASE_SENSITIVE) = 0 on the home volume /System/Volumes/Data and on /Volumes/Data; diskutil reports "APFS", not "Case-sensitive APFS"). Every file lookup therefore follows the volume's rule, including hyprutils Path.cpp findConfig/checkConfigExists and any file the config references (source includes, shaders, wallpapers). No code change: Linux behaves the same on a case-insensitive filesystem, and a user on case-sensitive APFS gets Linux's behavior. Configs that work on Linux work unchanged on macOS; configs should use exact-case names so they stay portable back to Linux.
 
 ## Port-only files
@@ -69,7 +71,7 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 ## Open decisions (raise when reached; do not decide)
 - Renderer for borders/shadows/blur/screen_shader: metal-cpp (+ glslang -> SPIRV-Cross) vs CoreAnimation.
 - Keyboard mapping: macOS kVK_* -> evdev KEY_*, and xkbcommon for keysyms.
-- How Hyprquartz is launched (LaunchAgent), including environment such as XDG_CONFIG_HOME. When PATH is unset (launchd), macOS execvp only searches /usr/bin:/bin (_PATH_DEFPATH, paths.h:65), so programs launched by exec-once / hl.dsp.exec_cmd from Homebrew or other locations would not be found; the launch design must provide PATH.
+- How Hyprquartz is launched (LaunchAgent), including environment such as XDG_CONFIG_HOME. When PATH is unset (launchd), macOS execvp only searches /usr/bin:/bin (_PATH_DEFPATH, paths.h:65), so programs launched by exec-once / hl.dsp.exec_cmd from Homebrew or other locations would not be found; the launch design must provide PATH. launchd's default soft open-file limit is 256 (launchctl limit maxfiles: soft 256, hard unlimited), and a process launched by launchd directly gets that limit (shells raise it: ulimit -n shows 8192 in Alacritty); the LaunchAgent should set SoftResourceLimits NumberOfFiles (man launchd.plist: "The maximum number of open files for this process").
 
 ## Suspected upstream bugs (ported as-is, to report upstream)
 - hyprutils src/math/Mat3x3.cpp:33: mat.size() < i condition is backwards.
@@ -84,12 +86,15 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 - hyprutils src/string/ConstVarList.cpp: join() with `to` greater than size() reads past the end of m_args (no bounds check).
 - hyprutils src/string/VarList.cpp: join() with `to` greater than size() reads past the end of m_vArgs (no bounds check).
 - hyprutils src/cli/ArgumentParser.cpp getDescription(): wrap() can loop forever when the description column width is 0 (lenUsed == MAX_COLS), adding empty pieces with lastBreakPos += 0; if the option columns are wider than maxWidth, maxW wraps to a huge size_t and descriptions aren't wrapped (found by reading, UNVERIFIED at run time).
+- hyprutils src/eventLoop/backend/Kqueue.cpp: an event collected under the old mask is delivered filtered by the new mask after setMask, so one callback reports W|HUP after setMask(R -> W) on a half-closed socket (measured with probes/eventloop: S3 other end, S5, L3 give [W|HUP, Wx255]; Linux gives [W|HUPx256]). Same code runs on FreeBSD.
+- hyprutils src/eventLoop/backend/Kqueue.cpp: a registered descriptor closed without removeFD makes the next rearmFD fail with kevent(ENABLE) ENOENT (close() removed its kevents), and fail() kills the loop: every later dispatch() returns that error (measured with probes/eventloop: row Z3, "DEAD: dispatch ERR: kevent(ENABLE): No such file or directory"). Linux epoll silently drops the closed descriptor and the loop keeps running (Z3 on durandal). Same code runs on the BSDs.
 
 ## How we work
 - One file at a time, in dependency order. Never jump ahead. Only do what the prompt asks; no extra steps.
 - Read the upstream file in full before writing. cp is fine for files with zero differences.
 - After writing each file, open it as an editor tab in the Hyprquartz project with the JetBrains MCP (mcp__clion__open_file_in_editor). No launcher, no open -a.
 - Never modify the reference clones. No scratch or temporary directories; everything stays inside the Hyprquartz project. Probes live in probes/ (gitignored) and need approval first.
+- Probes on durandal (the Linux reference machine) live in ~/pollprobe, with the same layout as here (e.g. ~/pollprobe/probes/eventloop, ~/pollprobe/probes/poll); run them from ~/pollprobe. The hyprutils reference clone there is ~/hyprutils. There is no ~/Hyprquartz on durandal.
 - Do not build unless asked; I build in CLion.
 - Never commit, push or change git state unless asked.
 - Commit messages contain only the text I give. No Co-Authored-By, Claude-Session or any other trailers.
