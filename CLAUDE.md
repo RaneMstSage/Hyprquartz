@@ -58,10 +58,16 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 ## Known macOS limitations
 - FileDescriptor.cpp isClosed() on a named FIFO: XNU only exposes "all writers have gone" through select() while the buffer is empty and before the first EOF read (implemented). Linux's POLLHUP in the other cases cannot be reproduced on macOS. Measured with probes/poll/poll_probe.cpp: Q5, a writer wrote then left with data unread (Linux closed=true readable=true; macOS closed=false readable=true); Q6, EOF already read once (Linux closed=true readable=false; macOS closed=false readable=false). Evidence: XNU fifo_vnops.c fifo_close_internal / fifo_read, vfs_vnops.c filt_vnode_common. Re-check with probes/poll/poll_probe.cpp.
 
+## Port-only files
+- subprojects/hyprutils/include/hyprutils/os/darwin/RuntimeDir.hpp and subprojects/hyprutils/src/os/darwin/RuntimeDir.cpp: the macOS runtime folder (XDG_RUNTIME_DIR replacement: /tmp/hyprquartz-<uid> symlink to ~/Library/Application Support/Hyprquartz/runtime, checked on every use), in hyprutils so that hyprutils (Semaphore.cpp, ProcLock.cpp), Hyprquartz and hyprctl share one implementation; entirely inside #if defined(__APPLE__), so they compile to nothing on other platforms.
+
+## Pending (do when the file is reached)
+- Hyprland main.cpp / CCompositor (src/Compositor.cpp): on Apple, call Hyprutils::OS::Darwin::exportRuntimeDir() at startup before any threads exist (setenv is not thread-safe), stopping with an error if it fails (as upstream main.cpp:202 does for an unset XDG_RUNTIME_DIR). Then clean up dead instance folders, since nothing wipes the runtime folder at reboot: for each <runtime>/hypr/<signature>/, remove it if hyprland.lock is missing or the PID on its first line is not alive. ProcLock lock files are already cleaned by upstream readLockFile(); Semaphore .hu_<name>.lock files need no cleanup.
+
 ## Open decisions (raise when reached; do not decide)
 - Renderer for borders/shadows/blur/screen_shader: metal-cpp (+ glslang -> SPIRV-Cross) vs CoreAnimation.
 - Keyboard mapping: macOS kVK_* -> evdev KEY_*, and xkbcommon for keysyms.
-- How Hyprquartz is launched (LaunchAgent), including environment such as XDG_CONFIG_HOME.
+- How Hyprquartz is launched (LaunchAgent), including environment such as XDG_CONFIG_HOME. When PATH is unset (launchd), macOS execvp only searches /usr/bin:/bin (_PATH_DEFPATH, paths.h:65), so programs launched by exec-once / hl.dsp.exec_cmd from Homebrew or other locations would not be found; the launch design must provide PATH.
 
 ## Suspected upstream bugs (ported as-is, to report upstream)
 - hyprutils src/math/Mat3x3.cpp:33: mat.size() < i condition is backwards.
