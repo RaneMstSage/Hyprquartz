@@ -52,6 +52,11 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 - Logger.cpp: Apple libc++ has no time zone database. Add an #elif defined(__APPLE__) branch using localtime_r + tm_gmtoff for local time; both upstream branches stay verbatim; no padding to 9 digits.
 - Path.cpp: no change; XDG vars unset on macOS resolve to ~/.config/hypr, matching the Linux fleet.
 - Numeric.hpp: floating-point from_chars unavailable below macOS 26 in Apple's libc++; upstream's strtod fallback enabled via _LIBCPP_AVAILABILITY_HAS_FROM_CHARS_FLOATING_POINT on lines 8 and 49.
+- FileDescriptor.cpp isClosed()/isReadable(): macOS replacement under #if defined(__APPLE__) reproducing Linux poll() results: fstat type dispatch; proc_pidfdinfo(PROC_PIDFDSOCKETINFO) for sockets; kqueue EVFILT_READ for FIFOs (write-only ends not readable) plus a zero-timeout select() on non-write-only FIFOs with no pending bytes to detect "all writers gone" (Q2); kqueue for ttys, and for ttys where kqueue can't attach (/dev/tty, EV_ERROR) a zero-timeout select() read check (readable = ready; closed = ready with FIONREAD showing no data, i.e. hung up); every select() uses _DARWIN_UNLIMITED_SELECT with a descriptor set sized for the fd, so no FD_SETSIZE limit; POLLNVAL treated as readable for non-pollable descriptors; upstream code verbatim for non-Apple.
+- proc_pidfdinfo is a private API (libproc.h: "private interfaces to obtain process information. These interfaces are subject to change in future releases."). Re-verify it after every macOS update by building and running probes/poll/poll_probe.cpp: every "new:" column must still match the Linux column.
+
+## Known macOS limitations
+- FileDescriptor.cpp isClosed() on a named FIFO: XNU only exposes "all writers have gone" through select() while the buffer is empty and before the first EOF read (implemented). Linux's POLLHUP in the other cases cannot be reproduced on macOS. Measured with probes/poll/poll_probe.cpp: Q5, a writer wrote then left with data unread (Linux closed=true readable=true; macOS closed=false readable=true); Q6, EOF already read once (Linux closed=true readable=false; macOS closed=false readable=false). Evidence: XNU fifo_vnops.c fifo_close_internal / fifo_read, vfs_vnops.c filt_vnode_common. Re-check with probes/poll/poll_probe.cpp.
 
 ## Open decisions (raise when reached; do not decide)
 - Renderer for borders/shadows/blur/screen_shader: metal-cpp (+ glslang -> SPIRV-Cross) vs CoreAnimation.
@@ -78,6 +83,7 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 - Never modify the reference clones. No scratch or temporary directories; everything stays inside the Hyprquartz project. Probes live in probes/ (gitignored) and need approval first.
 - Do not build unless asked; I build in CLion.
 - Never commit, push or change git state unless asked.
+- Commit messages contain only the text I give. No Co-Authored-By, Claude-Session or any other trailers.
 - Do not write to your memory unless asked.
 - If anything is unclear, ask.
 
