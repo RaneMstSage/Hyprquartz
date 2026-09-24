@@ -83,6 +83,7 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 - hyprutils src/string/ConstVarList.cpp: the lastArgNo remainder is a view into m_str after delimiters were replaced with 0 bytes, so it contains embedded \0 characters.
 - hyprutils src/string/ConstVarList.cpp: join() with `to` greater than size() reads past the end of m_args (no bounds check).
 - hyprutils src/string/VarList.cpp: join() with `to` greater than size() reads past the end of m_vArgs (no bounds check).
+- hyprutils src/cli/ArgumentParser.cpp getDescription(): wrap() can loop forever when the description column width is 0 (lenUsed == MAX_COLS), adding empty pieces with lastBreakPos += 0; if the option columns are wider than maxWidth, maxW wraps to a huge size_t and descriptions aren't wrapped (found by reading, UNVERIFIED at run time).
 
 ## How we work
 - One file at a time, in dependency order. Never jump ahead. Only do what the prompt asks; no extra steps.
