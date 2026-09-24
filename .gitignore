@@ -37,3 +37,6 @@ DerivedData/
 *.dylib
 *.dSYM/
 *.tar.gz
+
+# Local probes (not part of the port)
+/probes/
