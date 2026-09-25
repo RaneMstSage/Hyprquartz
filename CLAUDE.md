@@ -98,6 +98,7 @@ hyprland.conf (hyprlang) and hyprland.lua (Lua 5.5, hl.* API) stay identical: sa
 - Renderer for borders/shadows/blur/screen_shader: metal-cpp (+ glslang -> SPIRV-Cross) vs CoreAnimation.
 - Keyboard mapping: macOS kVK_* -> evdev KEY_*, and xkbcommon for keysyms.
 - How Hyprquartz is launched (LaunchAgent), including environment such as XDG_CONFIG_HOME. When PATH is unset (launchd), macOS execvp only searches /usr/bin:/bin (_PATH_DEFPATH, paths.h:65), so programs launched by exec-once / hl.dsp.exec_cmd from Homebrew or other locations would not be found; the launch design must provide PATH. launchd's default soft open-file limit is 256 (launchctl limit maxfiles: soft 256, hard unlimited), and a process launched by launchd directly gets that limit (shells raise it: ulimit -n shows 8192 in Alacritty); the LaunchAgent should set SoftResourceLimits NumberOfFiles (man launchd.plist: "The maximum number of open files for this process").
+- Nix packaging for hyprutils (subprojects/hyprutils/flake.nix, flake.lock, nix/default.nix, nix/overlays.nix, ported verbatim): whether and how it builds on macOS. Upstream is Linux-only: flake.nix:6 takes its systems from github:nix-systems/default-linux, and nix/default.nix:55 sets meta.platforms = platforms.linux. Not built or tested on macOS.
 
 ## Suspected upstream bugs (ported as-is, to report upstream)
 - hyprutils src/math/Mat3x3.cpp:33: mat.size() < i condition is backwards.
