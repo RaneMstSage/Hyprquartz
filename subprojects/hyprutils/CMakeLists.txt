@@ -65,6 +65,9 @@ target_include_directories(
 set_target_properties(hyprutils PROPERTIES VERSION ${hyprutils_VERSION}
                                             SOVERSION 13)
 target_link_libraries(hyprutils PkgConfig::deps ${EVENT_LOOP_LIBRARIES})
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_libraries(hyprutils "-framework CoreFoundation")
+endif()
 
 if(BUILD_TESTING)
     # GTest
