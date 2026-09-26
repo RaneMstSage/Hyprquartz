@@ -15,6 +15,7 @@ if(NOT APPLE)
 endif()
 
 add_subdirectory(subprojects/hyprutils)
+add_subdirectory(subprojects/hyprlang)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
