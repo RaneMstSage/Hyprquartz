@@ -17,6 +17,7 @@ endif()
 add_subdirectory(subprojects/hyprutils)
 add_subdirectory(subprojects/hyprlang)
 add_subdirectory(subprojects/hyprwayland-scanner)
+add_subdirectory(subprojects/hyprcursor)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
