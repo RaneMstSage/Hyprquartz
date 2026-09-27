@@ -77,9 +77,9 @@ The only compiler warnings are in upstream's own test code, which is ported as i
 CMakeLists.txt              top-level build (target: hyprquartz)
 VERSION                     Hyprquartz version (0.1.0)
 CLAUDE.md                   porting rules, decisions, limitations, open questions
-LICENSES/                   licences of ported upstream code (Hyprland-BSD-3-Clause.txt)
+LICENSES/                   licences of ported upstream code (Hyprland-BSD-3-Clause.txt) and vendored headers (compat-*.txt)
 src/                        Hyprland's sources as they are ported (early files only)
-compat/linux/               vendored Linux header (input-event-codes.h)
+compat/                     vendored Linux headers: linux/input-event-codes.h, GLES3/, KHR/, xf86drm.h, libdrm/
 subprojects/hyprutils/      hyprutils port, with its upstream tests
 subprojects/hyprlang/       hyprlang port, with its upstream tests
 subprojects/hyprland-protocols/  hyprland-protocols, verbatim
@@ -124,6 +124,15 @@ Hyprquartz's own licence is not decided yet, so the repository has no root `LICE
 | hyprlang | LGPL-3.0-only | `subprojects/hyprlang/LICENSE`, `subprojects/hyprlang/COPYRIGHT` |
 | hyprland-protocols | BSD-3-Clause | `subprojects/hyprland-protocols/LICENSE` |
 | `compat/linux/input-event-codes.h` | GPL-2.0-only WITH Linux-syscall-note (its SPDX line) | |
+| `compat/GLES3/gl32.h` (libglvnd 1.7.0-3) | MIT (its SPDX line; Khronos Group) | `LICENSES/compat-GLES3-gl32.h-MIT.txt` |
+| `compat/GLES3/gl3platform.h` (libglvnd 1.7.0-3) | Apache-2.0 (its SPDX line; Khronos Group) | `LICENSES/compat-GLES3-gl3platform.h-Apache-2.0.txt` |
+| `compat/KHR/khrplatform.h` (libglvnd 1.7.0-3) | MIT-style (its own notice; Khronos Group) | `LICENSES/compat-KHR-khrplatform.h-MIT.txt` |
+| `compat/xf86drm.h` (libdrm 2.4.134-1) | MIT/X11-style (its own notice) | `LICENSES/compat-xf86drm.h-MIT.txt` |
+| `compat/libdrm/drm.h` (libdrm 2.4.134-1) | MIT/X11-style (its own notice) | `LICENSES/compat-libdrm-drm.h-MIT.txt` |
+| `compat/libdrm/drm_mode.h` (libdrm 2.4.134-1) | MIT/X11-style (its own notice) | `LICENSES/compat-libdrm-drm_mode.h-MIT.txt` |
+| `compat/libdrm/drm_fourcc.h` (libdrm 2.4.134-1) | MIT (its SPDX line; Intel) | `LICENSES/compat-libdrm-drm_fourcc.h-MIT.txt` |
+
+The GLES3, KHR and libdrm headers in `compat/` are vendored verbatim from Arch Linux's installed files (packages libglvnd 1.7.0-3 and libdrm 2.4.134-1), so hyprgraphics' pixel-format constants are identical to the Linux build. Each licence file holds that header's own licence lines; `gl32.h`, `gl3platform.h` and `drm_fourcc.h` state only an SPDX identifier, so their files add the standard MIT text (from SPDX) or the Apache-2.0 text (from apache.org).
 
 The code in `src/` comes from Hyprland, which is BSD-3-Clause. Hyprland's licence is in `LICENSES/Hyprland-BSD-3-Clause.txt`, copied verbatim from Hyprland's `LICENSE`.
 
