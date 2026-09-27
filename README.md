@@ -96,16 +96,15 @@ Hyprquartz builds only on macOS; the top-level `CMakeLists.txt` stops on other s
 **Requirements:**
 - AppleClang 17 (Xcode). The project uses C++26.
 - CMake 3.30 or newer.
-- pkg-config (or pkgconf).
-- pixman, for hyprutils.
-- GoogleTest, for hyprutils' tests, which are built in Debug.
+- pkg-config.
+- The system libraries, from [MacPorts](https://www.macports.org): pixman and GoogleTest for hyprutils, pugixml for hyprwayland-scanner, and libzip, cairo and librsvg for hyprcursor, which also needs toml++ (still from Homebrew for now). GoogleTest has to be built from source with Xcode's SDK; `CLAUDE.md` explains why and how.
 
-**Tested with:** macOS 15.7, with CMake, pkgconf, pixman and GoogleTest from Homebrew. Any minimum deployment target set later must be macOS 13.3 or newer (see `CLAUDE.md`).
+**Tested with:** macOS 15.7, Xcode 26.2, CMake 4.4.3 (Kitware's build), and MacPorts' libraries and pkg-config 0.29.2; toml++ still comes from Homebrew for now. Any minimum deployment target set later must be macOS 13.3 or newer (see `CLAUDE.md`).
 
 The recorded builds were Debug builds in CLion, using Ninja and the `build/` folder. The equivalent from a shell is below. It is the standard CMake form and wasn't recorded separately.
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DPKG_CONFIG_EXECUTABLE=/opt/local/bin/pkg-config "-DCMAKE_PREFIX_PATH=/opt/local;/usr/local/opt/tomlplusplus"
 cmake --build build
 ctest --test-dir build/subprojects/hyprutils
 ctest --test-dir build/subprojects/hyprlang
