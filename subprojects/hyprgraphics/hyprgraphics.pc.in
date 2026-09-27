@@ -1,0 +1,12 @@
+prefix=@PREFIX@
+includedir=@INCLUDE@
+libdir=@LIBDIR@
+
+Name: hyprgraphics
+URL: https://github.com/hyprwm/hyprgraphics
+Description: Hyprland graphics utilities library used across the ecosystem
+Version: @HYPRGRAPHICS_VERSION@
+Requires: cairo hyprutils pangocairo glesv2
+Requires.private: @HYPRGRAPHICS_PRIVATE_REQUIRES@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lhyprgraphics
