@@ -6,7 +6,7 @@
 #include <utility>
 
 #if defined(__APPLE__)
-#include "darwin/PollMask.hpp"
+#include <hyprutils/os/darwin/PollMask.hpp>
 #endif
 
 using namespace Hyprutils::OS;

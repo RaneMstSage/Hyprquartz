@@ -28,8 +28,8 @@
 #include <utility>
 
 #if defined(__APPLE__)
-#include "../../os/darwin/AwakeClock.hpp"
-#include "../../os/darwin/PollMask.hpp"
+#include <hyprutils/os/darwin/AwakeClock.hpp>
+#include <hyprutils/os/darwin/PollMask.hpp>
 
 #include <sys/param.h>
 #include <sys/select.h>

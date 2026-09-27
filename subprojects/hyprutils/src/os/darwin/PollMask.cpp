@@ -2,7 +2,7 @@
 
 #define _DARWIN_UNLIMITED_SELECT
 
-#include "PollMask.hpp"
+#include <hyprutils/os/darwin/PollMask.hpp>
 
 #include <fcntl.h>
 #include <libproc.h>

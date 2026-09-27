@@ -3,7 +3,7 @@
 #include "EventLoop.hpp"
 
 #if defined(__APPLE__)
-#include "../os/darwin/AwakeClock.hpp"
+#include <hyprutils/os/darwin/AwakeClock.hpp>
 #endif
 
 using namespace Hyprutils::EventLoop;
