@@ -4,7 +4,7 @@ Hyprquartz is a faithful port of [Hyprland](https://github.com/hyprwm/Hyprland),
 
 **Hyprquartz is an independent project. It is not affiliated with, endorsed by or supported by the Hyprland project or Hypr Development.** Please report problems with Hyprquartz here, not to Hyprland.
 
-> **Status: early work in progress.** Three of the components Hyprland depends on are ported. Hyprland itself is not ported yet, and the `hyprquartz` binary does nothing yet. Details are under [Status](#status).
+> **Status: early work in progress.** Six of the components Hyprland depends on are ported. Hyprland itself is not ported yet, and the `hyprquartz` binary does nothing yet. Details are under [Status](#status).
 
 ## What "faithful port" means
 
@@ -37,9 +37,12 @@ The config contract is a rule for the port. It can't be checked yet, because Hyp
 | hyprutils | 0.14.2, commit 95983ee | Ported (128 files) | All 23 upstream test files pass: **51/51** on macOS and on Linux |
 | hyprlang | 0.6.8, commit 9508458 | Ported (30 files) | Both upstream tests pass: **2/2** (Parsing, Fuzz) on macOS and on Linux |
 | hyprland-protocols | 0.7.1, commit cc9a8fd | Ported (17 files, all byte-identical) | Upstream has no tests; nothing here is built or run on its own |
+| hyprwayland-scanner | 0.4.6, commit 62e62c1 | Ported (13 files verbatim, plus the CMakeLists) | Upstream has no tests. Its output for all 8 hyprland-protocols files (32 generated files) is byte-identical on macOS and on Linux |
+| hyprcursor | 0.1.13, commit e4ed7c0 | Ported (35 files verbatim, plus the CMakeLists) | All 3 upstream tests pass: **3/3** on macOS and on Linux, with the Bibata-Modern-Classic test theme upstream's CI uses |
+| hyprgraphics | 0.5.1, commit 7c895c4 | Ported (58 files verbatim, plus the CMakeLists); needs vendored GLES3 and libdrm headers on macOS | Both upstream tests pass on macOS: **2/2** (Image, ARG). The Linux run is still to do |
 | Hyprland | commit 23118f9f | **Not ported.** A few early files exist (see below) | None |
 
-Test runs, all on 2026-09-25:
+Test runs:
 
 | | Builds, test targets and sanitizer | Linux copy tested |
 |---|---|---|
@@ -47,8 +50,14 @@ Test runs, all on 2026-09-25:
 | **hyprutils on Linux** | GCC 16.2.1, Debug, with AddressSanitizer | commit a1bdada |
 | **hyprlang on macOS** | AppleClang 17, Debug, Ninja. Upstream's CMake adds no sanitizer | |
 | **hyprlang on Linux** | GCC 16.2.1, Debug | commit e048c03 |
+| **hyprwayland-scanner output, macOS and Linux** | AppleClang 17 and GCC 16.2.1, Debug; the 32 generated files compared byte for byte | commit 671c1bc |
+| **hyprcursor on macOS** | AppleClang 17, Debug, Ninja | |
+| **hyprcursor on Linux** | GCC 16.2.1, Debug | commit 695e2fa |
+| **hyprgraphics on macOS** | AppleClang 17, Debug, Ninja; the ARG test with Liberation Sans through fontconfig (see `CLAUDE.md`) | |
 
-The only compiler warnings are in upstream's own test code, which is ported as it is.
+hyprutils, hyprlang and hyprwayland-scanner were first run on 2026-09-25 and hyprcursor on 2026-09-26; all four were run again after the switch to MacPorts (2026-09-26 and 2026-09-27), and hyprgraphics was first run on 2026-09-27.
+
+The only compiler warnings are in upstream's own code (hyprutils', hyprlang's and hyprcursor's), which is ported as it is; hyprgraphics builds without warnings.
 
 **What hyprutils needed:** macOS replacements for the Linux-specific parts. Each one is described in `CLAUDE.md`.
 - **Event loop:** epoll-style results emulated on kqueue.
@@ -58,9 +67,11 @@ The only compiler warnings are in upstream's own test code, which is ported as i
 - **Logger:** local-time formatting.
 - **Locale detection.**
 
+**What hyprgraphics needed:** only headers. Its pixel-format table uses GLES3 and libdrm constants, but it calls no GL or DRM function, so those headers are vendored verbatim from the Linux reference machine into `compat/` (see the licence table), and its CMake uses them on macOS in place of finding GLES3 and libdrm.
+
 **Hyprland's early files:** `src/` holds `includes.hpp`, `SharedDefs.hpp`, `debug/log/Logger.*` and `helpers/math/Math.*`, plus `compat/linux/input-event-codes.h` (vendored verbatim). They were started before the dependency libraries were done and aren't compiled yet: `src/main.cpp` is a placeholder that returns 0, and it's the only file the `hyprquartz` target builds.
 
-**Next:** hyprwayland-scanner, then hyprcursor, hyprgraphics, hyprwire, aquamarine, hyprtoolkit, hyprland-guiutils, then Hyprland.
+**Next:** hyprwire, then aquamarine, hyprtoolkit, hyprland-guiutils, then Hyprland.
 - **The big design questions are still open**, listed under "Open decisions" in `CLAUDE.md`:
   - what replaces the Wayland protocol layer, since macOS apps aren't Wayland clients;
   - the aquamarine backend (outputs, input, buffers);
@@ -83,10 +94,13 @@ compat/                     vendored Linux headers: linux/input-event-codes.h, G
 subprojects/hyprutils/      hyprutils port, with its upstream tests
 subprojects/hyprlang/       hyprlang port, with its upstream tests
 subprojects/hyprland-protocols/  hyprland-protocols, verbatim
+subprojects/hyprwayland-scanner/  hyprwayland-scanner port
+subprojects/hyprcursor/     hyprcursor port, with its upstream tests
+subprojects/hyprgraphics/   hyprgraphics port, with its upstream tests
 ```
 
 **How the build uses them:**
-- **hyprutils and hyprlang** are added with `add_subdirectory`. hyprlang links the in-project hyprutils target instead of a copy installed on the system.
+- **hyprutils, hyprlang, hyprwayland-scanner, hyprcursor and hyprgraphics** are added with `add_subdirectory`, in that order. Each links the in-project hypr* targets (hyprutils, hyprlang) instead of copies installed on the system.
 - **hyprland-protocols is data only.** It isn't added to the build, because Hyprland's build reads its XML files by path.
 
 ## Building
@@ -97,7 +111,7 @@ Hyprquartz builds only on macOS; the top-level `CMakeLists.txt` stops on other s
 - AppleClang 17 (Xcode). The project uses C++26.
 - CMake 3.30 or newer.
 - pkg-config.
-- The system libraries, from [MacPorts](https://www.macports.org): pixman and GoogleTest for hyprutils, pugixml for hyprwayland-scanner, and libzip, cairo, librsvg and toml++ for hyprcursor. GoogleTest has to be built from source with Xcode's SDK; `CLAUDE.md` explains why and how. toml++ comes from a local MacPorts port (`CLAUDE.md` describes it), since MacPorts has none.
+- The system libraries, from [MacPorts](https://www.macports.org): pixman and GoogleTest for hyprutils, pugixml for hyprwayland-scanner, libzip, cairo, librsvg and toml++ for hyprcursor, and pango, libjpeg-turbo, libwebp, libmagic, libpng, libjxl and libheif for hyprgraphics (its test font is MacPorts' liberation-fonts). GoogleTest has to be built from source with Xcode's SDK; `CLAUDE.md` explains why and how. toml++ comes from a local MacPorts port (`CLAUDE.md` describes it), since MacPorts has none.
 
 **Tested with:** macOS 15.7, Xcode 26.2, CMake 4.4.3 (Kitware's build), and MacPorts' libraries and pkg-config 0.29.2. Any minimum deployment target set later must be macOS 13.3 or newer (see `CLAUDE.md`).
 
@@ -108,11 +122,16 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DPKG_CONFIG_EXECUTABLE=/o
 cmake --build build
 ctest --test-dir build/subprojects/hyprutils
 ctest --test-dir build/subprojects/hyprlang
+HYPRCURSOR_THEME=Bibata-Modern-Classic-Hyprcursor HYPRCURSOR_SIZE=16 ctest --test-dir build/subprojects/hyprcursor
+FONTCONFIG_FILE=/absolute/path/to/fonts.conf PANGOCAIRO_BACKEND=fontconfig ctest --test-dir build/subprojects/hyprgraphics
 ```
+
+hyprcursor's tests need the test theme installed in `~/.local/share/icons`. For hyprgraphics, `fonts.conf` is a fontconfig file that includes MacPorts' `/opt/local/etc/fonts/fonts.conf` and prefers Liberation Sans for `sans-serif` and `Sans Serif`, the font the Linux machine uses; `PANGOCAIRO_BACKEND=fontconfig` is needed because pango on macOS uses CoreText otherwise. Both are described in `CLAUDE.md`.
 
 **Where the tests are:** tests are registered inside each subproject, not at the top level, so run `ctest` in each subproject's build folder.
 - **hyprutils** registers its tests in Debug builds.
 - **hyprlang** registers its tests in every build type, as upstream does.
+- **hyprcursor and hyprgraphics** register theirs as upstream does.
 
 ## Licence
 
@@ -123,6 +142,9 @@ Hyprquartz's own licence is not decided yet, so the repository has no root `LICE
 | hyprutils | BSD-3-Clause | `subprojects/hyprutils/LICENSE` |
 | hyprlang | LGPL-3.0-only | `subprojects/hyprlang/LICENSE`, `subprojects/hyprlang/COPYRIGHT` |
 | hyprland-protocols | BSD-3-Clause | `subprojects/hyprland-protocols/LICENSE` |
+| hyprwayland-scanner | BSD-3-Clause | `subprojects/hyprwayland-scanner/LICENSE` |
+| hyprcursor | BSD-3-Clause | `subprojects/hyprcursor/LICENSE` |
+| hyprgraphics | BSD-3-Clause | `subprojects/hyprgraphics/LICENSE` |
 | `compat/linux/input-event-codes.h` | GPL-2.0-only WITH Linux-syscall-note (its SPDX line) | |
 | `compat/GLES3/gl32.h` (libglvnd 1.7.0-3) | MIT (its SPDX line; Khronos Group) | `LICENSES/compat-GLES3-gl32.h-MIT.txt` |
 | `compat/GLES3/gl3platform.h` (libglvnd 1.7.0-3) | Apache-2.0 (its SPDX line; Khronos Group) | `LICENSES/compat-GLES3-gl3platform.h-Apache-2.0.txt` |
@@ -138,4 +160,4 @@ The code in `src/` comes from Hyprland, which is BSD-3-Clause. Hyprland's licenc
 
 ## Acknowledgements
 
-Hyprland, hyprutils, hyprlang and hyprland-protocols are made by vaxerski and Hypr Development, together with their contributors. Hyprquartz exists because of their work.
+Hyprland, hyprutils, hyprlang, hyprland-protocols, hyprwayland-scanner, hyprcursor and hyprgraphics are made by vaxerski and Hypr Development, together with their contributors. Hyprquartz exists because of their work.
