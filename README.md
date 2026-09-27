@@ -97,14 +97,14 @@ Hyprquartz builds only on macOS; the top-level `CMakeLists.txt` stops on other s
 - AppleClang 17 (Xcode). The project uses C++26.
 - CMake 3.30 or newer.
 - pkg-config.
-- The system libraries, from [MacPorts](https://www.macports.org): pixman and GoogleTest for hyprutils, pugixml for hyprwayland-scanner, and libzip, cairo and librsvg for hyprcursor, which also needs toml++ (still from Homebrew for now). GoogleTest has to be built from source with Xcode's SDK; `CLAUDE.md` explains why and how.
+- The system libraries, from [MacPorts](https://www.macports.org): pixman and GoogleTest for hyprutils, pugixml for hyprwayland-scanner, and libzip, cairo, librsvg and toml++ for hyprcursor. GoogleTest has to be built from source with Xcode's SDK; `CLAUDE.md` explains why and how. toml++ comes from a local MacPorts port (`CLAUDE.md` describes it), since MacPorts has none.
 
-**Tested with:** macOS 15.7, Xcode 26.2, CMake 4.4.3 (Kitware's build), and MacPorts' libraries and pkg-config 0.29.2; toml++ still comes from Homebrew for now. Any minimum deployment target set later must be macOS 13.3 or newer (see `CLAUDE.md`).
+**Tested with:** macOS 15.7, Xcode 26.2, CMake 4.4.3 (Kitware's build), and MacPorts' libraries and pkg-config 0.29.2. Any minimum deployment target set later must be macOS 13.3 or newer (see `CLAUDE.md`).
 
 The recorded builds were Debug builds in CLion, using Ninja and the `build/` folder. The equivalent from a shell is below. It is the standard CMake form and wasn't recorded separately.
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DPKG_CONFIG_EXECUTABLE=/opt/local/bin/pkg-config "-DCMAKE_PREFIX_PATH=/opt/local;/usr/local/opt/tomlplusplus"
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DPKG_CONFIG_EXECUTABLE=/opt/local/bin/pkg-config -DCMAKE_PREFIX_PATH=/opt/local
 cmake --build build
 ctest --test-dir build/subprojects/hyprutils
 ctest --test-dir build/subprojects/hyprlang
