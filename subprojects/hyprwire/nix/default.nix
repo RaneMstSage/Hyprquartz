@@ -1,0 +1,38 @@
+{
+  lib,
+  stdenv,
+  cmake,
+  pkg-config,
+  gtest,
+  hyprutils,
+  libffi,
+  pugixml,
+  version ? "git",
+  doCheck ? false,
+}:
+stdenv.mkDerivation {
+  pname = "hyprwire";
+  inherit version doCheck;
+
+  src = ../.;
+
+  nativeBuildInputs = [
+    cmake
+    pkg-config
+  ]
+  ++ lib.optionals doCheck [ gtest ];
+
+  buildInputs = [
+    hyprutils
+    libffi
+    pugixml
+    gtest
+  ];
+
+  meta = {
+    homepage = "https://github.com/hyprwm/hyprwire";
+    description = "A fast and consistent wire protocol for IPC";
+    license = lib.licenses.bsd3;
+    platforms = lib.platforms.linux;
+  };
+}
