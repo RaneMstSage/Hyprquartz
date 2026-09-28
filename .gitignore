@@ -40,3 +40,6 @@ DerivedData/
 
 # Local probes (not part of the port)
 /probes/
+
+# Local machine notes (private, never published)
+/local-notes.md
